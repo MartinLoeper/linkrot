@@ -2,7 +2,7 @@
 # importing modules
 from __future__ import absolute_import, division, print_function,\
  unicode_literals
-from .colorprint import colorprint, OKGREEN, FAIL
+from .colorprint import colorprint, OKGREEN, FAIL, WARNING
 from .threadpool import ThreadPool
 from collections import defaultdict
 import ssl
@@ -69,6 +69,12 @@ def check_refs(refs, verbose=True, max_threads=MAX_THREADS_DEFAULT):
 
     def check_url(ref):
         url = ref.ref
+        excluded_urls=os.environ.get("EXCLUDED_URLS").split(",")
+        
+        if(url in excluded_urls):
+            colorprint(WARNING, "%s - %s" % ("SKIPPED", url));
+            return
+
         status_code = str(get_status_code(url))
         codes[status_code].append(ref)
         if verbose:
@@ -90,10 +96,12 @@ def check_refs(refs, verbose=True, max_threads=MAX_THREADS_DEFAULT):
 
     # Print summary
     print("\nSummary of link checker:")
+    retval=True
     if "200" in codes:
         colorprint(OKGREEN, "%s working" % len(codes["200"]))
     for c in sorted(codes):
         if c != "200":
+            retval=False
             colorprint(FAIL, "%s broken (reason: %s)" % (len(codes[c]), c))
             for ref in codes[c]:
                 o = "  - %s" % ref.ref
@@ -101,6 +109,7 @@ def check_refs(refs, verbose=True, max_threads=MAX_THREADS_DEFAULT):
                     o += " (page %s)" % ref.page
                 print(o)
 
+    return retval
 
 def download_urls(
     urls, output_directory, verbose=True, max_threads=MAX_THREADS_DEFAULT

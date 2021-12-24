@@ -222,11 +222,12 @@ def main():
             print_to_console(text)
 
     # Checking for broken links
+    check_success=True
     if args.check_links:
         refs_all = pdf.get_references()
         refs = [ref for ref in refs_all if ref.reftype in ["url", "pdf"]]
         print("\nChecking %s URLs for broken links..." % len(refs))
-        check_refs(refs)
+        check_success=check_refs(refs)
 
     # Check for errors in downloading and then produce the output
     try:
@@ -239,6 +240,9 @@ def main():
             print("All done!")
     except Exception as e:
         exit_with_error(ERROR_DOWNLOAD, str(e))
+
+    if check_success == False:
+        exit_with_error(1, "Some of the checks failed")
 
 
 if __name__ == "__main__":
